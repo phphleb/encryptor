@@ -33,9 +33,9 @@ final readonly class Encryptor
      *                        размерам блока шифровального метода.
      */
     public function __construct(
-        private string $key,
-        private string $cipherMethod = 'aes-256-cbc',
-        private int $ivLength = 16,
+        #[\SensitiveParameter] private string $key,
+        #[\SensitiveParameter] private string $cipherMethod = 'aes-256-cbc',
+        #[\SensitiveParameter] private int $ivLength = 16,
     )
     {
         if (empty($this->key)) {
@@ -56,7 +56,7 @@ final readonly class Encryptor
      *
      * @throws EncryptorException
      */
-    public function encrypt(string $plaintext): string
+    public function encrypt(#[\SensitiveParameter] string $plaintext): string
     {
         $iv = openssl_random_pseudo_bytes($this->ivLength);
 
