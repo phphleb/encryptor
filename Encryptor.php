@@ -58,6 +58,9 @@ final readonly class Encryptor
      */
     public function encrypt(#[\SensitiveParameter] string $plaintext): string
     {
+        if ($plaintext === '') {
+            return '';
+        }
         $iv = openssl_random_pseudo_bytes($this->ivLength);
 
         try {
@@ -78,10 +81,16 @@ final readonly class Encryptor
      */
     public function decrypt(string $ciphertext): string
     {
+        if ($ciphertext === '') {
+            return '';
+        }
         $decoded = base64_decode($ciphertext);
 
         $iv = substr($decoded, 0, $this->ivLength);
         $encryptedData = substr($decoded, $this->ivLength);
+        if ($encryptedData === '') {
+            throw new EncryptorFailedException("Decryption failed");
+        }
         try {
             $plaintext = openssl_decrypt($encryptedData, $this->cipherMethod, $this->key, OPENSSL_RAW_DATA, $iv);
         } catch (\Exception $e) {
