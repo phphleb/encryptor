@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Phphleb\Encryptor;
+namespace Phphleb\encryptor;
 
 use InvalidArgumentException;
 
@@ -31,11 +31,15 @@ final readonly class Encryptor
      *
      *                      - длина инициализирующего вектора, должна соответствовать
      *                        размерам блока шифровального метода.
+     *
+     * @param string $prefix - the missing part from the beginning of the text.
+     *                       - не учитываемая часть с начала текста.
      */
     public function __construct(
         #[\SensitiveParameter] private string $key,
         #[\SensitiveParameter] private string $cipherMethod = 'aes-256-cbc',
         #[\SensitiveParameter] private int $ivLength = 16,
+        private string $prefix = '',
     )
     {
         if (empty($this->key)) {
@@ -61,6 +65,7 @@ final readonly class Encryptor
         if ($plaintext === '') {
             return '';
         }
+
         $iv = openssl_random_pseudo_bytes($this->ivLength);
 
         try {
@@ -69,7 +74,9 @@ final readonly class Encryptor
             throw new EncryptorException($e->getMessage(), $e->getCode(), $e);
         }
 
-        return base64_encode($iv . $ciphertext);
+        $plaintext = base64_encode($iv . $ciphertext);
+
+        return $this->prefix ? $this->prefix . '_' . $plaintext : $plaintext;
     }
 
     /**
@@ -84,6 +91,13 @@ final readonly class Encryptor
         if ($ciphertext === '') {
             return '';
         }
+        if ($this->prefix) {
+            $ciphertext = preg_replace("/^{$this->prefix}_/", "", $ciphertext);
+            if ($ciphertext === '') {
+                return '';
+            }
+        }
+
         $decoded = base64_decode($ciphertext);
 
         $iv = substr($decoded, 0, $this->ivLength);
